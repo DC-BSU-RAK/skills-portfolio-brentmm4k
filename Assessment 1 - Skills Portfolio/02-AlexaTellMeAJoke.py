@@ -9,7 +9,6 @@ try:
     PYGAME_AVAILABLE = True
 except ImportError:
     PYGAME_AVAILABLE = False
-
 # Try to import PIL for image manipulation and fade effects; gracefully degrade if not available
 try:
     from PIL import Image, ImageTk
@@ -17,12 +16,14 @@ try:
 except ImportError:
     PIL_AVAILABLE = False
 
-"""Simple Alexa-style joke app.
-
+"""
+Simple Alexa-style joke teller GUI.
 Refactored into a class so widgets and state are instance attributes
 (`self.*`) and easy to reuse or embed. Keeps the original behaviour
 but fixes an off-by-one bug when choosing random jokes and adds
 inline comments explaining key parts.
+
+Submitted by: Brent Muli
 """
 class AlexaJokeApp:
     """Application class for the joke UI."""
@@ -155,7 +156,7 @@ class AlexaJokeApp:
         self.punchline_label.config(text=self.punchline_list[self.current_joke_index])
         # Mark punchline as shown; now show the prompt message to continue
         self.punchline_shown = True
-        self.message_label.config(text="Press 'Next joke' to continue!")
+        self.message_label.config(text="Press 'Next joke' to continue the silliness!")
         
         # Play laugh sound in a separate thread to avoid blocking UI
         # Only attempt if pygame is available and the audio file exists
