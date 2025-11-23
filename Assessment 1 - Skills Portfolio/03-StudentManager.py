@@ -1,10 +1,7 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox, simpledialog, filedialog
 import os
 from pathlib import Path
-# `ttk` (themed tk) provides modern-looking widgets. `messagebox` handles
-# error/info/confirmation dialogs. `simpledialog` handles simple text input.
-# `pathlib.Path` helps with cross-platform file path handling.
 
 """
 Student Marks Manager GUI
@@ -56,8 +53,16 @@ class StudentManager:
                 break
 
         if found is None:
-            messagebox.showerror("Error", "studentMarks.txt file not found in expected locations.")
-            return
+            # If no file found, ask user to select one
+            found = filedialog.askopenfilename(
+                initialdir=script_dir,
+                title="Select student marks file",
+                filetypes=(("Text files", "*.txt"), ("All files", "*.*"))
+            )
+            if not found:
+                messagebox.showerror("Error", "No student marks file selected.")
+                return
+            found = Path(found)
 
         self.data_file = found
         
@@ -89,23 +94,13 @@ class StudentManager:
             messagebox.showerror("Error", f"Failed reading {found}: {e}")
     
     def save_data(self):
-        """Save student data back to file"""
+        """Save student data back to the original file"""
         if not self.data_file:
             messagebox.showerror("Error", "No data file path known for saving.")
-            return
+            return False
         
         try:
-            # Determine the output file path: save as studentMarksedited.txt in A1 - Resources
-            script_dir = Path(__file__).resolve().parent
-            output_dir = script_dir / "A1 - Resources"
-            
-            # Create the directory if it doesn't exist
-            output_dir.mkdir(parents=True, exist_ok=True)
-            
-            # Set the output file path
-            output_file = output_dir / "studentMarksedited.txt"
-            
-            with open(output_file, 'w', encoding='utf-8') as file:
+            with open(self.data_file, 'w', encoding='utf-8') as file:
                 # Write the count as first line (for file format compatibility)
                 file.write(f"{len(self.students)}\n")
                 # Write each student as comma-separated values on a new line
@@ -333,12 +328,14 @@ class StudentManager:
             self.students.sort(key=lambda s: self.calculate_percentage(s), reverse=True)
             order_text = "descending"
         
-        # Display sorted results
-        self.view_all()
-        self.output_text.insert(tk.END, f"\n(Students sorted in {order_text} order by overall percentage)\n")
+        # Save the sorted data back to the original file
+        if self.save_data():
+            # Display sorted results
+            self.view_all()
+            self.output_text.insert(tk.END, f"\n(Students sorted in {order_text} order by overall percentage)\n")
     
     def add_student(self):
-        """Add a new student record"""
+        """Add a new student record directly to the original file"""
         # Create a new top-level (modal) window for the add form
         add_window = tk.Toplevel(self.root)
         add_window.title("Add New Student")
@@ -408,10 +405,10 @@ class StudentManager:
                 }
                 
                 self.students.append(new_student)
-                # Save to file and refresh display if successful
+                # Save to original file and refresh display if successful
                 if self.save_data():
                     add_window.destroy()
-                    messagebox.showinfo("Success", "Student added successfully.")
+                    messagebox.showinfo("Success", "Student added successfully to the original file.")
                     self.view_all()  # Refresh display
                 
             except ValueError:
@@ -423,7 +420,7 @@ class StudentManager:
         add_window.columnconfigure(1, weight=1)
     
     def delete_student(self):
-        """Delete a student record"""
+        """Delete a student record directly from the original file"""
         if not self.students:
             messagebox.showinfo("Info", "No student records available.")
             return
@@ -447,7 +444,7 @@ class StudentManager:
             # Ask for confirmation before deleting
             if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete {student_name} (Code: {code})?"):
                 deleted_student = self.students.pop(found_index)
-                # Save changes to file and refresh display
+                # Save changes directly to original file and refresh display
                 if self.save_data():
                     messagebox.showinfo("Success", f"Student {deleted_student['name']} deleted successfully.")
                     self.view_all()  # Refresh display
@@ -455,7 +452,7 @@ class StudentManager:
             messagebox.showinfo("Not Found", f"No student found with code {code}")
     
     def update_student(self):
-        """Update a student record"""
+        """Update a student record directly in the original file"""
         if not self.students:
             messagebox.showinfo("Info", "No student records available.")
             return
@@ -555,14 +552,14 @@ class StudentManager:
                     'exam_mark': exam
                 }
                 
-                # Save changes to file and refresh display if successful
+                # Save changes directly to text file and refresh display if successful
                 if self.save_data():
                     update_window.destroy()
-                    messagebox.showinfo("Success", "Student updated successfully.")
+                    messagebox.showinfo("Success", "File has been updated successfully.")
                     self.view_all()  # Refresh display
                 
             except ValueError:
-                messagebox.showerror("Error", "Please enter valid numeric values.")
+                messagebox.showerror("Error", "Please enter valid student code.")
         
         ttk.Button(update_window, text="Save Changes", command=save_changes).grid(row=6, column=0, columnspan=2, pady=10)
         
